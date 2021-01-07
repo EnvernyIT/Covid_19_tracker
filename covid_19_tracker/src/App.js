@@ -1,0 +1,112 @@
+import React, { useState, useEffect } from "react";
+import './App.css';
+import Map from "./Map";
+import Table from "./Table";
+import InfoBox from './InfoBox';
+import { MenuItem, FormControl, Select, Card, CardContent } from "@material-ui/core";
+import { sortData } from "./util";
+
+
+function App() {
+  const [countries, setCountries] = useState(["USA","UK","INDIA"]);
+  const [country, setCountry] = useState('worldwide');
+  const [countryInfo, setCountryInfo] = useState({});
+  const [tableData, setTableData] = useState([]);
+
+  useEffect(() => {
+    fetch("https://disease.sh/v3/covid-19/all")
+    .then(response => response.json())
+    .then(data => {
+      setCountryInfo(data);
+    })
+  }, [])
+
+  //STATE = how to write a variable in react
+  // https://disease.sh/v3/covid-19/countries
+  //USEEFFECT = Runs a piece of code based on a given condition
+
+  useEffect(() => {
+   //The code inside here will run once when the app component loads and not again
+   // async -> send a request, wait for it, do something with that info
+   const getCountriesData = async () => {
+     await fetch ("https://disease.sh/v3/covid-19/countries")
+     .then((response) => response.json())
+     .then((data) => {
+       const countries = data.map((country) => (
+         {
+           name: country.country, //United States, United Kingdom
+           value: country.countryInfo.iso2 //UK, USA, Fr etc///
+         }
+       ))
+        const sortedData = sortData(data);
+        setTableData(sortedData);
+        setCountries(countries);
+     })
+   };
+   getCountriesData();
+  }, [countries])
+
+const onCountryChange = async (event) => {
+  const countryCode = event.target.value
+
+  const url = countryCode === 'worldwide' 
+  ? 'https://disease.sh/v3/covid-19/all' 
+  : `https://disease.sh/v3/covid-19/countries/${countryCode}`;
+
+  await fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      setCountry(countryCode);
+      //All of data from the country response
+      setCountryInfo(data);
+  })
+}
+
+  return (
+    <div className="app">
+      <div className="app__left">
+      {/*BEM*/}
+        <div className="app__header">
+          <h1>COVID-19 TRACKER</h1>
+          <FormControl className="app__dropdown">
+            <Select varien="outlined" onChange={onCountryChange} value={country}>
+              {/* Loop through all the countries and show a drop down list of the options*/}
+              <MenuItem value="worldwide">Worldwide</MenuItem>
+              {
+                countries.map((country) => (
+                  <MenuItem value={country.value}>{country.name}</MenuItem>
+                ))}
+
+              {/*<MenuItem value="worldwide">Worldwide</MenuItem>
+              <MenuItem value="worldwide">Option One</MenuItem>
+              <MenuItem value="worldwide">Option Two</MenuItem>
+              <MenuItem value="worldwide">Option Three</MenuItem>*/}
+            </Select>
+          </FormControl>        
+      </div>
+
+        <div className="app__stats">
+          <InfoBox title="Coronavirus cases" cases={countryInfo.todayCases} total={countryInfo.cases}/>
+
+          <InfoBox title="Recovered" cases={countryInfo.todayRecovered} total={countryInfo.recovered}/>
+
+          <InfoBox title="Deaths" cases={countryInfo.todayDeaths} total={countryInfo.deaths}/>
+        
+        </div>
+
+        {/*Map*/}
+        <Map />
+      </div>
+      <Card className="app__right">
+        <CardContent>
+          <h3>Lives Cases by Country</h3>
+          <Table countries={tableData}/>
+          <h3>Worldwide New Cases</h3>
+          <LineGraph />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default App;
