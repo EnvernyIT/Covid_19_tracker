@@ -5,6 +5,7 @@ import Table from "./Table";
 import InfoBox from './InfoBox';
 import { MenuItem, FormControl, Select, Card, CardContent } from "@material-ui/core";
 import { sortData } from "./util";
+import LineGraph from "./LineGraph";
 
 
 function App() {
